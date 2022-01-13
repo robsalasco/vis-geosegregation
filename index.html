@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>mtnlss vis</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    #controls {
+      position: absolute;
+      top: 300px;
+      left: 1080px;
+      width: 200px;
+      height: 300px;
+      background-color: #FFF;
+    }
+
+    #menu {
+      background: #fff;
+      position: absolute;
+      z-index: 1;
+      top: 10px;
+      right: 10px;
+      border-radius: 3px;
+      width: 120px;
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      font-family: 'Open Sans', sans-serif;
+    }
+
+    #menu a {
+      font-size: 10px;
+      color: #404040;
+      display: block;
+      margin: 0;
+      padding: 0;
+      padding: 5px;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    #menu a:last-child {
+      border: none;
+    }
+
+    #menu a:hover {
+      background-color: #f8f8f8;
+      color: #404040;
+    }
+
+    #menu a.active {
+      background-color: #d3d3d3;
+      color: #000;
+    }
+
+    #features {
+      font-size: 10px;
+      position: absolute;
+      left: 10px;
+      bottom: 30px;
+      width: 300px;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    #legend, #legend-entropy {
+      font-size: 20px;
+      position: absolute;
+      right: 10px;
+      bottom: 50px;
+      width: 300px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      font-family: 'Open Sans', sans-serif;
+    }
+
+
+    #legend-entropy span, #legend-entropy label {
+      width: 16%;
+    }
+
+    .legend label,
+    .legend-entropy label,
+    .legend span,
+    .legend-entropy span {
+      display: block;
+      float: left;
+      height: 15px;
+      width: 20%;
+      text-align: center;
+      font-size: 10px;
+      color: #404040;
+    }
+  </style>
+</head>
+
+<body>
+  <style>
+    #map canvas {
+      cursor: crosshair;
+    }
+  </style>
+
+  <nav id="menu"></nav>
+  <div id="map"></div>
+  <pre id="features"></pre>
+  <div id='legend' style='display:none;'>
+    <nav class='legend clearfix'>
+      <span style='background:#ffffcc;'></span>
+      <span style='background:#a1dab4;'></span>
+      <span style='background:#41b6c4;'></span>
+      <span style='background:#2c7fb8;'></span>
+      <span style='background:#253494;'></span>
+      <label>0</label>
+      <label>25%</label>
+      <label>50%</label>
+      <label>75%</label>
+      <label>100%</label>
+  </div>
+  <div id='legend-entropy' style='display:none;'>
+    <nav class='legend clearfix'>
+      <span style='background:#feebe2;'></span>
+      <span style='background:#fcc5c0;'></span>
+      <span style='background:#fa9fb5;'></span>
+      <span style='background:#f768a1;'></span>
+      <span style='background:#c51b8a;'></span>
+      <span style='background:#7a0177;'></span>
+      <label>0</label>
+      <label>0.325</label>
+      <label>0.918</label>
+      <label>1.458</label>
+      <label>1.999</label>
+      <label>2.81</label>
+  </div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoicm9ic2FsYXNjbyIsImEiOiJjaWcxbzh1bjAxMHhodXdsdnczZ28xOHc1In0.WkFivOlHKIMwx30ssZorBw';
+    var map = new mapboxgl.Map({
+      container: 'map', // container id
+      style: 'mapbox://styles/mapbox/light-v10', // style URL
+      center: [-70.642228, -33.469036], // starting position [lng, lat]
+      zoom: 10 // starting zoom
+    });
+
+    map.on('load', function () {
+      map.addSource('base-voronoi', {
+        type: 'vector',
+        tiles: ['http://localhost:8080/maps/voronoi/{z}/{x}/{y}.vector.pbf'],
+        "minzoom": 0,
+        "maxzoom": 14
+      });
+
+      map.addLayer({
+        'id': 'entropy',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'h'],
+            0,
+            '#feebe2',
+            0.325,
+            '#fcc5c0',
+            0.918,
+            '#fa9fb5',
+            1.458,
+            '#f768a1',
+            1.999,
+            '#c51b8a',
+            2.81,
+            '#7a0177'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'restaurant',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'restaurant'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+      // muestra donde hay mas restaurantes respecto al resto de features
+      map.addLayer({
+        'id': 'school',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'school'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'supermarket',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'supermarket'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'courthouse',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'courthouse'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'pharmacy',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'pharmacy'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'government',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'government'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'fire_station',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'fire_station'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'bakery',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'bakery'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'fast_food',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'fast_food'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'fuel',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'fuel'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'bank',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'bank'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'convenience',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'convenience'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'clinic',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'clinic'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'cafe',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'cafe'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'place_of_worship',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'place_of_worship'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'library',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'library'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'bar',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'bar'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'police',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'police'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'pub',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'pub'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'hospital',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'hospital'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'hotel',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'hotel'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'theatre',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'theatre'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+      map.addLayer({
+        'id': 'fitness_centre',
+        'type': 'fill',
+        'source': 'base-voronoi',
+        'source-layer': 'map_voronoi',
+        'layout': {
+          // Make the layer visible by default.
+          'visibility': 'none'
+        },
+        'paint': {
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'fitness_centre'],
+            0,
+            '#ffffcc',
+            0.25,
+            '#a1dab4',
+            0.50,
+            '#41b6c4',
+            0.75,
+            '#2c7fb8',
+            1,
+            '#253494'
+          ],
+          'fill-opacity': 0.85,
+          'fill-outline-color': 'white'
+        }
+      }, 'settlement-subdivision-label');
+
+    });
+
+    map.on('idle', () => {
+
+      //activeLayers = .map(function (feat) {
+      //feat.filter(function(item) {
+      //     return item.layout.visibility === "none"
+      //   });
+      //});
+
+      // Enumerate ids of the layers.
+      const toggleableLayerIds = ['entropy', 'restaurant', 'school', 'supermarket', 'courthouse',
+                                  'pharmacy', 'government', 'fire_station', 'bakery',
+                                  'fast_food', 'fuel', 'bank', 'convenience',
+                                  'clinic', 'cafe', 'place_of_worship', 'library',
+                                  'bar', 'police', 'pub', 'hospital', 'hotel',
+                                  'restaurant', 'fitness_centre', 'theatre'];
+
+      // Set up the corresponding toggle button for each layer.
+      for (const id of toggleableLayerIds) {
+        // Skip layers that already have a button set up.
+        if (document.getElementById(id)) {
+          continue;
+        }
+
+        // Create a link.
+        const link = document.createElement('a');
+        link.id = id;
+        link.href = '#';
+        link.textContent = id;
+
+
+        // Show or hide layer when the toggle is clicked.
+        link.onclick = function (e) {
+          const clickedLayer = this.textContent;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const visibility = map.getLayoutProperty(
+            clickedLayer,
+            'visibility'
+          );
+
+          if (clickedLayer !== 'entropy') {
+            document.getElementById('legend').style.display = 'block';
+            document.getElementById('legend-entropy').style.display = 'none';
+
+            document.getElementById('features').style.display = 'block';
+
+          } else {
+            document.getElementById('legend-entropy').style.display = 'block';
+            document.getElementById('legend').style.display = 'none';
+
+            document.getElementById('features').style.display = 'block';
+
+          }
+
+          // Toggle layer visibility by changing the layout object's visibility property.
+          if (visibility === 'visible') {
+            map.setLayoutProperty(clickedLayer, 'visibility', 'none');
+
+            document.getElementById('legend-entropy').style.display = 'none';
+            document.getElementById('legend').style.display = 'none';
+
+            document.getElementById('features').style.display = 'none';
+
+            this.className = '';
+          } else {
+            this.className = 'active';
+            map.setLayoutProperty(
+              clickedLayer,
+              'visibility',
+              'visible'
+            );
+          }
+        };
+
+        const layers = document.getElementById('menu');
+        layers.appendChild(link);
+      }
+    });
+
+    map.on('mousemove', function (e) {
+      var features = map.queryRenderedFeatures(e.point, {
+        layers: ["entropy", "school", "pharmacy", "cafe", "bar", "hospital", "restaurant", "fast_food", "clinic", "fire_station", "police", "government", "supermarket", "convenience", "bank", "place_of_worship", "courthouse", "fuel", "fitness_centre", "hotel", "theatre", "library", "pub", "bakery"] // replace this with the name of the layer
+      });
+      // Limit the number of properties we're displaying for
+      // legibility and performance
+      var displayProperties = [
+        'properties'
+      ];
+
+      var displayFeatures = features.map(function (feat) {
+        var displayFeat = {};
+        displayProperties.forEach(function (prop) {
+          displayFeat[prop] = feat[prop];
+        });
+        return displayFeat;
+      });
+
+      document.getElementById('features').innerHTML = JSON.stringify(
+        displayFeatures[0].properties,
+        null,
+        2
+      );
+    });
+
+
+
+
+
+  </script>
+
+</body>
+
+</html>

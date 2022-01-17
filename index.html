@@ -931,7 +931,7 @@
                                   'fast_food', 'fuel', 'bank', 'convenience',
                                   'clinic', 'cafe', 'place_of_worship', 'library',
                                   'bar', 'police', 'pub', 'hospital', 'hotel',
-                                  'restaurant', 'fitness_centre', 'theatre'];
+                                  'restaurant', 'fitness_centre', 'theatre','total_pers'];
 
       // Set up the corresponding toggle button for each layer.
       for (const id of toggleableLayerIds) {
@@ -999,7 +999,7 @@
 
     map.on('mousemove', function (e) {
       var features = map.queryRenderedFeatures(e.point, {
-        layers: ["entropy", "school", "pharmacy", "cafe", "bar", "hospital", "restaurant", "fast_food", "clinic", "fire_station", "police", "government", "supermarket", "convenience", "bank", "place_of_worship", "courthouse", "fuel", "fitness_centre", "hotel", "theatre", "library", "pub", "bakery"] // replace this with the name of the layer
+        layers: ["entropy", "school", "pharmacy", "cafe", "bar", "hospital", "restaurant", "fast_food", "clinic", "fire_station", "police", "government", "supermarket", "convenience", "bank", "place_of_worship", "courthouse", "fuel", "fitness_centre", "hotel", "theatre", "library", "pub", "bakery","total_pers"] // replace this with the name of the layer
       });
       // Limit the number of properties we're displaying for
       // legibility and performance

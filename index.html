@@ -77,7 +77,7 @@
       background: rgba(255, 255, 255, 0.8);
     }
 
-    #legend, #legend-entropy {
+    #legend, #legend-entropy, #legend-total_pers {
       font-size: 20px;
       position: absolute;
       right: 10px;
@@ -93,10 +93,16 @@
       width: 16%;
     }
 
+    #legend-total_pers label {
+      width: 20%;
+    }
+
     .legend label,
     .legend-entropy label,
+    .legend-total_pers label,
     .legend span,
-    .legend-entropy span {
+    .legend-entropy span,
+    .legend-total_pers span {
       display: block;
       float: left;
       height: 15px;
@@ -118,6 +124,20 @@
   <nav id="menu"></nav>
   <div id="map"></div>
   <pre id="features"></pre>
+  <div id='legend-total_pers' style='display:none;'>
+    <nav class='legend clearfix'>
+      <span style='background:#ffffcc;'></span>
+      <span style='background:#a1dab4;'></span>
+      <span style='background:#41b6c4;'></span>
+      <span style='background:#2c7fb8;'></span>
+      <span style='background:#253494;'></span>
+      <label>0</label>
+      <label>3204</label>
+      <label>9001</label>
+      <label>18389</label>
+      <label>41055</label>
+    </nav>
+  </div>
   <div id='legend' style='display:none;'>
     <nav class='legend clearfix'>
       <span style='background:#ffffcc;'></span>
@@ -130,6 +150,7 @@
       <label>50%</label>
       <label>75%</label>
       <label>100%</label>
+    </nav>
   </div>
   <div id='legend-entropy' style='display:none;'>
     <nav class='legend clearfix'>
@@ -145,6 +166,7 @@
       <label>1.458</label>
       <label>1.999</label>
       <label>2.81</label>
+    </nav>
   </div>
   <script>
     mapboxgl.accessToken = 'pk.eyJ1Ijoicm9ic2FsYXNjbyIsImEiOiJjaWcxbzh1bjAxMHhodXdsdnczZ28xOHc1In0.WkFivOlHKIMwx30ssZorBw';
@@ -958,18 +980,24 @@
             'visibility'
           );
 
-          if (clickedLayer !== 'entropy') {
-            document.getElementById('legend').style.display = 'block';
-            document.getElementById('legend-entropy').style.display = 'none';
-
-            document.getElementById('features').style.display = 'block';
-
-          } else {
+          if (clickedLayer == 'entropy') {
             document.getElementById('legend-entropy').style.display = 'block';
+            document.getElementById('legend-total_pers').style.display = 'none';
             document.getElementById('legend').style.display = 'none';
 
             document.getElementById('features').style.display = 'block';
+          } else if (clickedLayer == 'total_pers') {
+            document.getElementById('legend-total_pers').style.display = 'block';
+            document.getElementById('legend-entropy').style.display = 'none';
+            document.getElementById('legend').style.display = 'none';
 
+            document.getElementById('features').style.display = 'block';
+          } else {
+            document.getElementById('legend').style.display = 'block';
+            document.getElementById('legend-entropy').style.display = 'none';
+            document.getElementById('legend-total_pers').style.display = 'none';
+
+            document.getElementById('features').style.display = 'block';
           }
 
           // Toggle layer visibility by changing the layout object's visibility property.
@@ -977,6 +1005,8 @@
             map.setLayoutProperty(clickedLayer, 'visibility', 'none');
 
             document.getElementById('legend-entropy').style.display = 'none';
+            document.getElementById('legend-total_pers').style.display = 'none';
+
             document.getElementById('legend').style.display = 'none';
 
             document.getElementById('features').style.display = 'none';

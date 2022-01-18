@@ -1059,7 +1059,10 @@
 
       document.getElementById('features').innerHTML = '';
 
-      Object.entries(displayFeatures[0].properties).sort().forEach(element => {
+      Object.entries(displayFeatures[0].properties)
+      .filter(function(i) {return i[0] !== 'h_jenks'})
+      .sort()
+      .forEach(element => {
         para = document.createElement("div");
         node = document.createTextNode(element[0] + ": " + Math.round((element[1] + Number.EPSILON) * 100) / 100);
         para.appendChild(node);

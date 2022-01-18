@@ -68,6 +68,7 @@
     }
 
     #features {
+      display: none;
       padding: 10px;
       font-size: 10px;
       position: absolute;
@@ -78,7 +79,9 @@
       background: rgba(255, 255, 255, 0.8);
     }
 
-    #legend, #legend-entropy, #legend-total_pers {
+    #legend,
+    #legend-entropy,
+    #legend-total_pers {
       font-size: 20px;
       position: absolute;
       right: 10px;
@@ -90,7 +93,8 @@
     }
 
 
-    #legend-entropy span, #legend-entropy label {
+    #legend-entropy span,
+    #legend-entropy label {
       width: 16%;
     }
 
@@ -950,11 +954,11 @@
 
       // Enumerate ids of the layers.
       const toggleableLayerIds = ['entropy', 'restaurant', 'school', 'supermarket', 'courthouse',
-                                  'pharmacy', 'government', 'fire_station', 'bakery',
-                                  'fast_food', 'fuel', 'bank', 'convenience',
-                                  'clinic', 'cafe', 'place_of_worship', 'library',
-                                  'bar', 'police', 'pub', 'hospital', 'hotel',
-                                  'restaurant', 'fitness_centre', 'theatre','total_pers'];
+        'pharmacy', 'government', 'fire_station', 'bakery',
+        'fast_food', 'fuel', 'bank', 'convenience',
+        'clinic', 'cafe', 'place_of_worship', 'library',
+        'bar', 'police', 'pub', 'hospital', 'hotel',
+        'restaurant', 'fitness_centre', 'theatre', 'total_pers'];
 
       // Set up the corresponding toggle button for each layer.
       for (const id of toggleableLayerIds) {
@@ -986,19 +990,16 @@
             document.getElementById('legend-total_pers').style.display = 'none';
             document.getElementById('legend').style.display = 'none';
 
-            document.getElementById('features').style.display = 'block';
           } else if (clickedLayer == 'total_pers') {
             document.getElementById('legend-total_pers').style.display = 'block';
             document.getElementById('legend-entropy').style.display = 'none';
             document.getElementById('legend').style.display = 'none';
 
-            document.getElementById('features').style.display = 'block';
           } else {
             document.getElementById('legend').style.display = 'block';
             document.getElementById('legend-entropy').style.display = 'none';
             document.getElementById('legend-total_pers').style.display = 'none';
 
-            document.getElementById('features').style.display = 'block';
           }
 
           // Toggle layer visibility by changing the layout object's visibility property.
@@ -1020,9 +1021,9 @@
               'visibility',
               'visible'
             );
-            
+
             // Control layer menu behavior
-            otherLayers = toggleableLayerIds.filter(function(i) {
+            otherLayers = toggleableLayerIds.filter(function (i) {
               return i !== clickedLayer
             })
 
@@ -1040,7 +1041,7 @@
 
     map.on('mousemove', function (e) {
       var features = map.queryRenderedFeatures(e.point, {
-        layers: ["entropy", "school", "pharmacy", "cafe", "bar", "hospital", "restaurant", "fast_food", "clinic", "fire_station", "police", "government", "supermarket", "convenience", "bank", "place_of_worship", "courthouse", "fuel", "fitness_centre", "hotel", "theatre", "library", "pub", "bakery","total_pers"] // replace this with the name of the layer
+        layers: ["entropy", "school", "pharmacy", "cafe", "bar", "hospital", "restaurant", "fast_food", "clinic", "fire_station", "police", "government", "supermarket", "convenience", "bank", "place_of_worship", "courthouse", "fuel", "fitness_centre", "hotel", "theatre", "library", "pub", "bakery", "total_pers"] // replace this with the name of the layer
       });
       // Limit the number of properties we're displaying for
       // legibility and performance
@@ -1048,33 +1049,32 @@
         'properties'
       ];
 
-      var displayFeatures = features.map(function (feat) {
-        var displayFeat = {};
-        displayProperties.forEach(function (prop) {
-          displayFeat[prop] = feat[prop];
+      if (features.length != 0) {
+        var displayFeatures = features.map(function (feat) {
+          var displayFeat = {};
+          displayProperties.forEach(function (prop) {
+            displayFeat[prop] = feat[prop];
+          });
+          return displayFeat;
         });
-        return displayFeat;
-      });
 
+        document.getElementById('features').style.display = 'block';
+        document.getElementById('features').innerHTML = '';
 
-      document.getElementById('features').innerHTML = '';
+        Object.entries(displayFeatures[0].properties)
+          .filter(function (i) { return i[0] !== 'h_jenks' })
+          .sort()
+          .forEach(element => {
+            para = document.createElement("div");
+            node = document.createTextNode(element[0] + ": " + Math.round((element[1] + Number.EPSILON) * 100) / 100);
+            para.appendChild(node);
 
-      Object.entries(displayFeatures[0].properties)
-      .filter(function(i) {return i[0] !== 'h_jenks'})
-      .sort()
-      .forEach(element => {
-        para = document.createElement("div");
-        node = document.createTextNode(element[0] + ": " + Math.round((element[1] + Number.EPSILON) * 100) / 100);
-        para.appendChild(node);
+            f = document.getElementById('features')
+            f.appendChild(para);
+          });
+      }
 
-        f = document.getElementById('features')
-        f.appendChild(para);
-      });
     });
-
-
-
-
 
   </script>
 

@@ -68,6 +68,7 @@
     }
 
     #features {
+      padding: 10px;
       font-size: 10px;
       position: absolute;
       left: 10px;
@@ -1019,7 +1020,8 @@
               'visibility',
               'visible'
             );
-
+            
+            // Control layer menu behavior
             otherLayers = toggleableLayerIds.filter(function(i) {
               return i !== clickedLayer
             })
@@ -1054,11 +1056,17 @@
         return displayFeat;
       });
 
-      document.getElementById('features').innerHTML = JSON.stringify(
-        displayFeatures[0].properties,
-        null,
-        2
-      );
+
+      document.getElementById('features').innerHTML = '';
+
+      Object.entries(displayFeatures[0].properties).sort().forEach(element => {
+        para = document.createElement("div");
+        node = document.createTextNode(element[0] + ": " + Math.round((element[1] + Number.EPSILON) * 100) / 100);
+        para.appendChild(node);
+
+        f = document.getElementById('features')
+        f.appendChild(para);
+      });
     });
 
 

@@ -1019,6 +1019,15 @@
               'visibility',
               'visible'
             );
+
+            otherLayers = toggleableLayerIds.filter(function(i) {
+              return i !== clickedLayer
+            })
+
+            otherLayers.forEach(element => {
+              map.setLayoutProperty(element, 'visibility', 'none');
+              document.getElementById(element).className = ''
+            });
           }
         };
 
